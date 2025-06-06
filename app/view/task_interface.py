@@ -210,6 +210,61 @@ class TaskInterface(ScrollArea):
             QWidget {
                 background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
             }
+
+            QLabel {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: transparent;
+                border: none;
+            }
+
+            QLabel#taskTitleLabel {
+                font-size: 28px;
+                font-weight: bold;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: transparent;
+                border: none;
+            }
+            
+            BodyLabel {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: transparent;
+                border: none;
+            }
+            
+            QFrame {
+                border: 1px solid """ + ('#333333' if isDarkTheme() else '#e0e0e0') + """;
+                background: transparent;
+            }
+
+            PushButton {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+                border-radius: 4px;
+                padding: 5px 10px;
+            }
+
+            PushButton:hover {
+                background: """ + ('#333333' if isDarkTheme() else '#e0e0e0') + """;
+            }
+
+            PushButton:pressed {
+                background: """ + ('#1e1e1e' if isDarkTheme() else '#d0d0d0') + """;
+            }
+
+            PushButton:disabled {
+                color: """ + ('rgba(255, 255, 255, 0.3)' if isDarkTheme() else 'rgba(0, 0, 0, 0.3)') + """;
+                background: """ + ('#1e1e1e' if isDarkTheme() else '#e0e0e0') + """;
+            }
+
+            TaskCard {
+                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border-radius: 8px;
+                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+            }
         """)
         
         self.setStyleSheet("""
@@ -217,29 +272,13 @@ class TaskInterface(ScrollArea):
                 background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
                 border: none;
             }
-            
-            QLabel#taskTitleLabel {
-                font-size: 28px;
-                font-weight: bold;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background-color: transparent;
-            }
-            
-            BodyLabel {
-                font-size: 14px;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background-color: transparent;
-            }
-            
-            QFrame {
-                border: 1px solid """ + ('#333333' if isDarkTheme() else '#e0e0e0') + """;
-                background-color: transparent;
-            }
         """)
         
     def showAddTaskDialog(self):
         """显示新建任务对话框"""
-        AddTaskDialog.showDialog(parent=self)
+        dialog = AddTaskDialog(parent=self)
+        dialog.taskCreated.connect(self.addConvertTask)
+        dialog.exec()
         
     def addConvertTask(self, source_file, target_file):
         """添加转换任务"""

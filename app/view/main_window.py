@@ -2,15 +2,19 @@ import sys
 import os
 from PySide6.QtCore import Qt, QSize, QPoint
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QHBoxLayout
 from qfluentwidgets import (FluentIcon as FIF, 
                           setTheme, Theme, isDarkTheme,
-                          NavigationItemPosition, MSFluentWindow, FluentWindow)
+                          NavigationItemPosition, MSFluentWindow, FluentWindow,
+                          SwitchButton, ComboBox, InfoBar, InfoBarPosition)
 
 from .task_interface import TaskInterface
 from .setting_interface import SettingInterface, cfg
 from .add_task_interface import AddTaskDialog
 from ..resource import icons_rc
+from ..common.config_manager import ThemeMode, config_manager
+from ..common.theme_helper import set_theme_mode
+from ..common.autostart_manager import autostart_manager
 
 
 class MainWindow(FluentWindow):
@@ -42,6 +46,8 @@ class MainWindow(FluentWindow):
         
         # 设置样式
         self.updateStyle()
+        
+        self.init_theme_settings()
         
     def updateStyle(self):
         """ 更新样式 """
@@ -90,6 +96,23 @@ class MainWindow(FluentWindow):
             
             QLabel {
                 color: """ + ('white' if isDarkTheme() else 'black') + """;
+            }
+            
+            QPushButton {
+                padding: 8px 16px;
+                font-size: 14px;
+                border-radius: 4px;
+                background-color: """ + ('#333333' if isDarkTheme() else '#f0f0f0') + """;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                border: none;
+            }
+            
+            QPushButton:hover {
+                background-color: """ + ('#404040' if isDarkTheme() else '#e5e5e5') + """;
+            }
+            
+            QPushButton:pressed {
+                background-color: """ + ('#2b2b2b' if isDarkTheme() else '#d9d9d9') + """;
             }
         """)
         
@@ -142,7 +165,76 @@ class MainWindow(FluentWindow):
         files = [url.toLocalFile() for url in event.mimeData().urls()]
         if files:
             # 显示新建任务对话框
-            AddTaskDialog.showDialog(files[0], self)
+            dialog = AddTaskDialog(self)
+            dialog.resize(self.size())
+            dialog.setSourceFile(files[0])
+            dialog.exec()
+
+    def init_theme_settings(self):
+        """初始化主题设置"""
+        # 创建主题选择下拉框
+        self.theme_combobox = ComboBox()
+        for theme_mode in ThemeMode:
+            self.theme_combobox.addItem(theme_mode.value)
+        
+        # 设置当前选中的主题
+        current_theme = config_manager.get_theme_mode()
+        self.theme_combobox.setCurrentText(current_theme.value)
+        
+        # 连接信号
+        self.theme_combobox.currentIndexChanged.connect(self._on_theme_changed)
+        
+        # 将主题选择器添加到设置页面
+        settings_interface = self.findChild(QWidget, "设置")
+        if settings_interface:
+            layout = settings_interface.layout()
+            if not layout:
+                from PySide6.QtWidgets import QVBoxLayout
+                layout = QVBoxLayout(settings_interface)
+            layout.addWidget(self.theme_combobox)
+
+    def _on_theme_changed(self, index):
+        """主题改变时的处理函数"""
+        theme_mode = ThemeMode[ThemeMode(self.theme_combobox.currentText()).name]
+        set_theme_mode(theme_mode)
+
+    def init_autostart_settings(self):
+        """初始化自启动设置"""
+        # 自启动设置
+        autostart_label = QLabel("开机自启动")
+        autostart_label.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.settings_layout.addWidget(autostart_label)
+
+        self.autostart_switch = SwitchButton()
+        self.autostart_switch.setChecked(config_manager.get_autostart())
+        self.autostart_switch.checkedChanged.connect(self._on_autostart_changed)
+        self.settings_layout.addWidget(self.autostart_switch)
+
+    def _on_autostart_changed(self, checked):
+        """自启动设置改变时的处理函数"""
+        success = autostart_manager.enable() if checked else autostart_manager.disable()
+        
+        if success:
+            config_manager.set_autostart(checked)
+            InfoBar.success(
+                title='成功',
+                content='自启动设置已更新',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
+        else:
+            InfoBar.error(
+                title='错误',
+                content='自启动设置更新失败',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
 
 
 if __name__ == '__main__':

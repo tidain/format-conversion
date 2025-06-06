@@ -43,22 +43,23 @@ class FormatConverter:
             # 视频格式
             'mp4': 'video', 'avi': 'video', 'mov': 'video', 
             'flv': 'video', 'mkv': 'video', 'wmv': 'video',
-            'webm': 'video', 'm4v': 'video', '3gp': 'video',
+            'webm': 'video', 'm4v': 'video',
             
             # 音频格式
             'mp3': 'audio', 'wav': 'audio', 'aac': 'audio',
             'flac': 'audio', 'm4a': 'audio', 'ogg': 'audio',
-            'wma': 'audio',
+            'wma': 'audio', 'opus': 'audio',
             
             # 图片格式
             'jpg': 'image', 'jpeg': 'image', 'png': 'image',
             'bmp': 'image', 'gif': 'image', 'webp': 'image',
-            'tiff': 'image', 'ico': 'image', 'svg': 'image',
+            'tiff': 'image', 'ico': 'image',
             
             # 文档格式
-            'pdf': 'pdf',
+            'pdf': 'document',
             'docx': 'document', 'doc': 'document', 'txt': 'document',
-            'rtf': 'document', 'odt': 'document',
+            'rtf': 'document', 'html': 'document', 'epub': 'document',
+            'mobi': 'document',
             
             # 压缩格式
             'zip': 'archive', 'rar': 'archive', '7z': 'archive',

@@ -1,42 +1,120 @@
 import os
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog
+from PySide6.QtCore import Qt, Signal, QPoint, QPropertyAnimation
+from PySide6.QtGui import QColor, QMouseEvent
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, 
+                             QLabel, QFileDialog, QFrame, QWidget,
+                             QGraphicsDropShadowEffect, QGraphicsOpacityEffect)
 from qfluentwidgets import (FluentIcon as FIF,
                           ComboBox, PushButton,
                           InfoBar, InfoBarPosition,
-                          isDarkTheme, FluentStyleSheet)
+                          isDarkTheme, FluentStyleSheet,
+                          RadioButton)
 
-from ..core.format_mapping import get_target_formats
-from ..components.custom_mask_dialog_base import MaskDialogBase
+from app.core.format_mapping import get_target_formats
 
-
-class AddTaskDialog(MaskDialogBase):
-    """新建任务对话框"""
+class CustomTitleBar(QWidget):
+    """自定义标题栏"""
     
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(48)
+        self.setObjectName("customTitleBar")
+        
+        # 布局
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(16, 0, 16, 0)
+        layout.setSpacing(8)
+        
+        # 标题
+        self.title_label = QLabel("新建转换任务", self)
+        self.title_label.setObjectName("titleLabel")
+        layout.addWidget(self.title_label)
+        
+        # 设置样式
+        self.setStyleSheet("""
+            QWidget#customTitleBar {
+                background-color: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+            }
+            QLabel#titleLabel {
+                font-size: 16px;
+                font-weight: bold;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+            }
+        """)
+
+class AddTaskDialog(QDialog):
+    """新建转换任务对话框"""
+    
+    taskCreated = Signal(str, str)  # 发送源文件路径和目标文件路径
     _instance = None
     _initialized = False
     
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.source_file = None
+        self.target_file = None
         
+        # 设置无边框窗口
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        
+        # 设置模态
+        self.setModal(True)
+        
+        # 创建遮罩
+        self.windowMask = QWidget(self)
+        self.windowMask.resize(self.size())
+        self.windowMask.setStyleSheet("""
+            background-color: rgba(0, 0, 0, 0.4);
+        """)
+        
+        # 创建中心窗口部件
+        self.centerWidget = QFrame(self)
+        self.centerWidget.setObjectName("centerWidget")
+        
+        # 设置阴影效果
+        self.setShadowEffect()
+        
+        self.setup_ui()
+        
+    def setShadowEffect(self, blurRadius=60, offset=(0, 10), color=QColor(0, 0, 0, 50)):
+        """设置阴影效果"""
+        shadowEffect = QGraphicsDropShadowEffect(self.centerWidget)
+        shadowEffect.setBlurRadius(blurRadius)
+        shadowEffect.setOffset(*offset)
+        shadowEffect.setColor(color)
+        self.centerWidget.setGraphicsEffect(shadowEffect)
+        
+    def setup_ui(self):
+        """初始化界面"""
         # 设置对话框属性
-        self.widget.setObjectName("addTaskDialog")
-        self.widget.resize(480, 420)
+        self.setObjectName("addTaskDialog")
+        self.resize(480, 420)
         
-        # 设置布局
-        self.vBoxLayout = QVBoxLayout(self.widget)
-        self.vBoxLayout.setContentsMargins(24, 24, 24, 24)
-        self.vBoxLayout.setSpacing(16)
+        # 设置主布局
+        self.main_layout = QHBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
         
-        # 添加标题
-        self.titleLabel = QLabel("新建转换任务", self.widget)
-        self.titleLabel.setObjectName("dialogTitleLabel")
-        self.vBoxLayout.addWidget(self.titleLabel)
+        # 设置中心窗口布局
+        self.center_layout = QVBoxLayout(self.centerWidget)
+        self.center_layout.setContentsMargins(0, 0, 0, 0)
+        self.center_layout.setSpacing(0)
+        
+        # 添加自定义标题栏
+        self.title_bar = CustomTitleBar(self.centerWidget)
+        self.center_layout.addWidget(self.title_bar)
+        
+        # 创建内容容器
+        self.content_widget = QWidget(self.centerWidget)
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(24, 24, 24, 24)
+        self.content_layout.setSpacing(16)
         
         # 添加文件选择区域
-        self.fileGroup = QWidget(self.widget)
+        self.fileGroup = QWidget(self.content_widget)
         self.fileLayout = QVBoxLayout(self.fileGroup)
         self.fileLayout.setContentsMargins(0, 0, 0, 0)
         self.fileLayout.setSpacing(8)
@@ -59,10 +137,10 @@ class AddTaskDialog(MaskDialogBase):
         self.filePathLabel.setWordWrap(True)
         self.fileLayout.addWidget(self.filePathLabel)
         
-        self.vBoxLayout.addWidget(self.fileGroup)
+        self.content_layout.addWidget(self.fileGroup)
         
         # 添加格式选择区域
-        self.formatGroup = QWidget(self.widget)
+        self.formatGroup = QWidget(self.content_widget)
         self.formatLayout = QVBoxLayout(self.formatGroup)
         self.formatLayout.setContentsMargins(0, 0, 0, 0)
         self.formatLayout.setSpacing(8)
@@ -75,10 +153,10 @@ class AddTaskDialog(MaskDialogBase):
         self.formatComboBox.setEnabled(False)
         self.formatLayout.addWidget(self.formatComboBox)
         
-        self.vBoxLayout.addWidget(self.formatGroup)
+        self.content_layout.addWidget(self.formatGroup)
         
         # 添加保存位置选择区域
-        self.saveGroup = QWidget(self.widget)
+        self.saveGroup = QWidget(self.content_widget)
         self.saveLayout = QVBoxLayout(self.saveGroup)
         self.saveLayout.setContentsMargins(0, 0, 0, 0)
         self.saveLayout.setSpacing(8)
@@ -86,72 +164,166 @@ class AddTaskDialog(MaskDialogBase):
         self.saveLabel = QLabel("保存位置", self.saveGroup)
         self.saveLayout.addWidget(self.saveLabel)
         
-        self.saveButtonLayout = QHBoxLayout()
+        # 保存位置选项
+        self.saveButtonLayout = QVBoxLayout()
         self.saveButtonLayout.setContentsMargins(0, 0, 0, 0)
         self.saveButtonLayout.setSpacing(8)
         
-        self.sameAsSourceButton = PushButton("与源文件相同", self.saveGroup)
-        self.sameAsSourceButton.clicked.connect(self.useSameLocation)
+        # 与源文件相同选项
+        self.sameAsSourceButton = RadioButton("与源文件相同", self.saveGroup)
+        self.sameAsSourceButton.setChecked(True)
         self.saveButtonLayout.addWidget(self.sameAsSourceButton)
         
-        self.customLocationButton = PushButton("自定义位置", self.saveGroup)
-        self.customLocationButton.clicked.connect(self.selectSaveLocation)
+        # 自定义位置选项
+        self.customLocationButton = RadioButton("自定义位置", self.saveGroup)
         self.saveButtonLayout.addWidget(self.customLocationButton)
+        
+        # 自定义位置选择按钮
+        self.customLocationWidget = QWidget(self.saveGroup)
+        self.customLocationLayout = QHBoxLayout(self.customLocationWidget)
+        self.customLocationLayout.setContentsMargins(20, 0, 0, 0)  # 左侧缩进
+        self.customLocationLayout.setSpacing(8)
+        
+        self.browseButton = PushButton("浏览...", self.customLocationWidget)
+        self.browseButton.clicked.connect(self.selectSaveLocation)
+        self.browseButton.setEnabled(False)
+        self.customLocationLayout.addWidget(self.browseButton)
+        
+        self.saveButtonLayout.addWidget(self.customLocationWidget)
         
         self.saveLayout.addLayout(self.saveButtonLayout)
         
+        # 保存路径显示
         self.savePathLabel = QLabel(self.saveGroup)
         self.savePathLabel.setWordWrap(True)
         self.saveLayout.addWidget(self.savePathLabel)
         
-        self.vBoxLayout.addWidget(self.saveGroup)
+        self.content_layout.addWidget(self.saveGroup)
         
-        self.vBoxLayout.addStretch()
+        self.content_layout.addStretch()
         
         # 添加底部按钮
         self.buttonLayout = QHBoxLayout()
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
         self.buttonLayout.setSpacing(8)
         
-        self.cancelButton = PushButton("取消", self.widget)
-        self.cancelButton.clicked.connect(self.close)
+        self.cancelButton = PushButton("取消", self.content_widget)
+        self.cancelButton.clicked.connect(self.reject)
         self.buttonLayout.addWidget(self.cancelButton)
         
-        self.confirmButton = PushButton("开始转换", self.widget)
+        self.confirmButton = PushButton("开始转换", self.content_widget)
         self.confirmButton.setEnabled(False)
-        self.confirmButton.clicked.connect(self.startConvert)
+        self.confirmButton.clicked.connect(self.createTask)
         self.buttonLayout.addWidget(self.confirmButton)
         
-        self.vBoxLayout.addLayout(self.buttonLayout)
+        self.content_layout.addLayout(self.buttonLayout)
+        
+        # 添加内容容器到中心窗口
+        self.center_layout.addWidget(self.content_widget)
+        
+        # 将中心窗口添加到主布局
+        self.main_layout.addWidget(self.centerWidget)
+        
+        # 连接信号
+        self.sameAsSourceButton.toggled.connect(self._on_save_location_changed)
+        self.customLocationButton.toggled.connect(self._on_save_location_changed)
+        self.formatComboBox.currentTextChanged.connect(self.updateConfirmButton)
+        self.confirmButton.clicked.disconnect()  # 断开之前的连接
+        self.confirmButton.clicked.connect(self.createTask)
         
         # 设置样式
-        self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
-        self.setMaskColor(QColor(0, 0, 0, 76))
-        self.setClosableOnMaskClicked(True)
-        
-        FluentStyleSheet.DIALOG.apply(self.widget)
         self.updateStyle()
         
     def updateStyle(self):
         """更新样式"""
-        self.widget.setStyleSheet("""
-            QWidget {
+        self.centerWidget.setStyleSheet("""
+            QFrame#centerWidget {
                 background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
-            }
-            
-            QLabel#dialogTitleLabel {
-                font-size: 24px;
-                font-weight: bold;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background-color: transparent;
+                border-radius: 10px;
+                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
             }
             
             QLabel {
                 font-size: 14px;
                 color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background-color: transparent;
+                background: transparent;
+                border: none;
+            }
+
+            QLabel#titleLabel {
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+            QWidget#customTitleBar {
+                background-color: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border-bottom: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+            }
+
+            RadioButton {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: transparent;
+            }
+
+            ComboBox {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+                border-radius: 4px;
+                padding: 5px;
+            }
+
+            ComboBox:disabled {
+                color: """ + ('rgba(255, 255, 255, 0.3)' if isDarkTheme() else 'rgba(0, 0, 0, 0.3)') + """;
+                background: """ + ('#1e1e1e' if isDarkTheme() else '#e0e0e0') + """;
+            }
+
+            PushButton {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+                border-radius: 4px;
+                padding: 5px 10px;
+            }
+
+            PushButton:hover {
+                background: """ + ('#333333' if isDarkTheme() else '#e0e0e0') + """;
+            }
+
+            PushButton:pressed {
+                background: """ + ('#1e1e1e' if isDarkTheme() else '#d0d0d0') + """;
+            }
+
+            PushButton:disabled {
+                color: """ + ('rgba(255, 255, 255, 0.3)' if isDarkTheme() else 'rgba(0, 0, 0, 0.3)') + """;
+                background: """ + ('#1e1e1e' if isDarkTheme() else '#e0e0e0') + """;
             }
         """)
+        
+    def showEvent(self, e):
+        """淡入效果"""
+        opacityEffect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(opacityEffect)
+        opacityAni = QPropertyAnimation(opacityEffect, b'opacity', self)
+        opacityAni.setStartValue(0)
+        opacityAni.setEndValue(1)
+        opacityAni.setDuration(200)
+        opacityAni.finished.connect(lambda: self.setGraphicsEffect(None))
+        opacityAni.start()
+        super().showEvent(e)
+        
+    def resizeEvent(self, e):
+        """调整大小事件"""
+        super().resizeEvent(e)
+        self.windowMask.resize(self.size())
+        # 将窗口居中显示
+        w, h = self.centerWidget.width(), self.centerWidget.height()
+        self.centerWidget.move(int(self.width()/2 - w/2), int(self.height()/2 - h/2))
         
     @classmethod
     def showDialog(cls, source_file=None, parent=None):
@@ -159,13 +331,13 @@ class AddTaskDialog(MaskDialogBase):
         if cls._initialized:
             if source_file:
                 cls._instance.setSourceFile(source_file)
-            cls._instance.exec()
+            return cls._instance.exec()
         else:
             cls._instance = cls(parent)
             cls._initialized = True
             if source_file:
                 cls._instance.setSourceFile(source_file)
-            cls._instance.exec()
+            return cls._instance.exec()
             
     def closeEvent(self, event):
         """关闭事件"""
@@ -173,6 +345,18 @@ class AddTaskDialog(MaskDialogBase):
         self.__class__._instance = None
         super().closeEvent(event)
         
+    def selectFile(self):
+        """选择源文件"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择文件",
+            os.path.expanduser("~"),
+            "所有文件 (*.*)"
+        )
+        
+        if file_path:
+            self.setSourceFile(file_path)
+            
     def setSourceFile(self, file_path):
         """设置源文件"""
         if not os.path.isfile(file_path):
@@ -196,7 +380,8 @@ class AddTaskDialog(MaskDialogBase):
             self.formatComboBox.setEnabled(True)
             
             # 设置默认保存位置
-            self.useSameLocation()
+            if self.sameAsSourceButton.isChecked():
+                self.useSameLocation()
         else:
             InfoBar.error(
                 title='错误',
@@ -210,18 +395,19 @@ class AddTaskDialog(MaskDialogBase):
             self.formatComboBox.setEnabled(False)
             self.confirmButton.setEnabled(False)
             
-    def selectFile(self):
-        """选择源文件"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "选择文件",
-            os.path.expanduser("~"),
-            "所有文件 (*.*)"
-        )
+    def _on_save_location_changed(self, checked):
+        """保存位置选项改变时的处理"""
+        if self.sameAsSourceButton.isChecked():
+            self.browseButton.setEnabled(False)
+            if self.source_file:
+                self.useSameLocation()
+        else:
+            self.browseButton.setEnabled(True)
+            if not self.savePathLabel.text():
+                self.savePathLabel.setText("请选择保存位置")
         
-        if file_path:
-            self.setSourceFile(file_path)
-            
+        self.updateConfirmButton()
+        
     def useSameLocation(self):
         """使用相同位置保存"""
         if not self.source_file:
@@ -245,29 +431,42 @@ class AddTaskDialog(MaskDialogBase):
             
     def updateConfirmButton(self):
         """更新确认按钮状态"""
+        has_save_path = (
+            (self.sameAsSourceButton.isChecked() and self.source_file) or
+            (self.customLocationButton.isChecked() and self.savePathLabel.text() != "请选择保存位置")
+        )
+        
         self.confirmButton.setEnabled(
             bool(self.source_file) and
             bool(self.formatComboBox.currentText()) and
-            not "---" in self.formatComboBox.currentText() and
-            bool(self.savePathLabel.text())
-        )
+            has_save_path and
+            not self.formatComboBox.currentText().startswith('---')
+        ) 
         
-    def startConvert(self):
-        """开始转换"""
+    def createTask(self):
+        """创建转换任务"""
         if not self.source_file:
             return
             
-        target_format = self.formatComboBox.currentText()
-        if not target_format or "---" in target_format:
+        # 获取目标格式
+        target_format = self.formatComboBox.currentText().lower()
+        if not target_format or target_format.startswith('---'):
             return
             
+        # 获取保存路径
+        if self.sameAsSourceButton.isChecked():
+            save_dir = os.path.dirname(self.source_file)
+        else:
+            save_dir = self.savePathLabel.text()
+            if not save_dir or save_dir == "请选择保存位置":
+                return
+                
         # 构建目标文件路径
-        file_name = os.path.splitext(os.path.basename(self.source_file))[0]
-        save_path = os.path.join(
-            self.savePathLabel.text(),
-            f"{file_name}.{target_format.lower()}"
-        )
+        source_name = os.path.splitext(os.path.basename(self.source_file))[0]
+        self.target_file = os.path.join(save_dir, f"{source_name}.{target_format}")
         
-        # 添加转换任务
-        self.parent().addConvertTask(self.source_file, save_path)
-        self.close() 
+        # 发送信号
+        self.taskCreated.emit(self.source_file, self.target_file)
+        
+        # 关闭对话框
+        self.accept() 

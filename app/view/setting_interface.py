@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard,
                           ComboBoxSettingCard, ScrollArea,
                           ExpandLayout, InfoBar, InfoBarPosition,
-                          FluentIcon as FIF)
+                          FluentIcon as FIF, isDarkTheme)
 from qfluentwidgets.common.config import (ConfigItem, QConfig, 
                                         OptionsConfigItem, OptionsValidator)
 
@@ -57,6 +57,9 @@ class SettingInterface(ScrollArea):
         
         # 初始化界面
         self.initUI()
+        
+        # 更新样式
+        self.updateStyle()
         
     def initUI(self):
         """ 初始化界面 """
@@ -113,6 +116,74 @@ class SettingInterface(ScrollArea):
         self.backgroundEffectCard.switchButton.checkedChanged.connect(self.onBackgroundEffectChanged)
         self.autoStartCard.switchButton.checkedChanged.connect(self.onAutoStartChanged)
         
+    def updateStyle(self):
+        """更新样式"""
+        self.scrollWidget.setStyleSheet("""
+            QWidget#settingScrollWidget {
+                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
+                border: none;
+            }
+            
+            SettingCardGroup {
+                background-color: transparent;
+                border: none;
+            }
+            
+            QLabel {
+                background: transparent;
+                border: none;
+            }
+            
+            ComboBox {
+                font-size: 14px;
+                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+                border-radius: 4px;
+                padding: 5px;
+            }
+            
+            ComboBox:disabled {
+                color: """ + ('rgba(255, 255, 255, 0.3)' if isDarkTheme() else 'rgba(0, 0, 0, 0.3)') + """;
+                background: """ + ('#1e1e1e' if isDarkTheme() else '#e0e0e0') + """;
+            }
+            
+            SwitchButton {
+                background: transparent;
+                border: none;
+            }
+        """)
+        
+        self.setStyleSheet("""
+            QScrollArea {
+                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
+                border: none;
+            }
+            
+            QScrollBar {
+                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                border: none;
+                width: 4px;
+            }
+            
+            QScrollBar::handle {
+                background: """ + ('#666666' if isDarkTheme() else '#c0c0c0') + """;
+                border: none;
+                border-radius: 2px;
+                min-height: 32px;
+            }
+            
+            QScrollBar::add-line, QScrollBar::sub-line {
+                background: none;
+                border: none;
+            }
+            
+            QScrollBar::add-page, QScrollBar::sub-page {
+                background: none;
+                border: none;
+            }
+        """)
+        
     def onThemeModeChanged(self, value):
         """ 主题模式改变时的处理函数 """
         InfoBar.success(
@@ -124,6 +195,7 @@ class SettingInterface(ScrollArea):
             duration=2000,
             parent=self
         )
+        self.updateStyle()
         
     def onBackgroundEffectChanged(self, value):
         """ 背景特效改变时的处理函数 """
