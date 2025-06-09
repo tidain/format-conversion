@@ -1,11 +1,14 @@
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget
-from qfluentwidgets import (SettingCardGroup, SwitchSettingCard,
-                          ComboBoxSettingCard, ScrollArea,
-                          ExpandLayout, InfoBar, InfoBarPosition,
-                          FluentIcon as FIF, isDarkTheme)
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from qfluentwidgets import (ScrollArea, ExpandLayout, SettingCardGroup,
+                          SwitchSettingCard, ComboBoxSettingCard, PushSettingCard,
+                          InfoBar, FluentIcon as FIF, InfoBarPosition, isDarkTheme)
 from qfluentwidgets.common.config import (ConfigItem, QConfig, 
                                         OptionsConfigItem, OptionsValidator)
+
+from ..common.config_manager import ThemeMode, config_manager
+from ..common.theme_helper import set_theme_mode
+from ..common.autostart_manager import autostart_manager
 
 
 class Config:
@@ -63,10 +66,17 @@ class SettingInterface(ScrollArea):
         
     def initUI(self):
         """ 初始化界面 """
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setViewportMargins(0, 0, 0, 0)
+        self.setObjectName('settingInterface')
+        
+        # 创建滚动区域
+        self.scrollWidget = QWidget()
+        self.expandLayout = ExpandLayout(self.scrollWidget)
+        
+        # 设置滚动条
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setViewportMargins(0, 0, 0, 0)
         
         # 外观设置
         appearanceGroup = SettingCardGroup("外观", self.scrollWidget)

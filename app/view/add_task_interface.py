@@ -1,16 +1,17 @@
 import os
-from PySide6.QtCore import Qt, Signal, QPoint, QPropertyAnimation
-from PySide6.QtGui import QColor, QMouseEvent
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, 
+from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QPropertyAnimation, QSize
+from PyQt6.QtGui import QColor, QMouseEvent
+from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, 
                              QLabel, QFileDialog, QFrame, QWidget,
                              QGraphicsDropShadowEffect, QGraphicsOpacityEffect)
 from qfluentwidgets import (FluentIcon as FIF,
                           ComboBox, PushButton,
                           InfoBar, InfoBarPosition,
                           isDarkTheme, FluentStyleSheet,
-                          RadioButton)
+                          RadioButton, LineEdit)
 
 from app.core.format_mapping import get_target_formats
+from ..core.converter import FormatConverter
 
 class CustomTitleBar(QWidget):
     """自定义标题栏"""
@@ -47,7 +48,7 @@ class CustomTitleBar(QWidget):
 class AddTaskDialog(QDialog):
     """新建转换任务对话框"""
     
-    taskCreated = Signal(str, str)  # 发送源文件路径和目标文件路径
+    taskCreated = pyqtSignal(str, str)  # 发送源文件路径和目标文件路径
     _instance = None
     _initialized = False
     
@@ -57,8 +58,9 @@ class AddTaskDialog(QDialog):
         self.target_file = None
         
         # 设置无边框窗口
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedSize(400, 500)
         
         # 设置模态
         self.setModal(True)

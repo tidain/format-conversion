@@ -1,8 +1,8 @@
 import sys
 import os
-from PySide6.QtCore import Qt, QSize, QPoint
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QHBoxLayout
+from PyQt6.QtCore import Qt, QSize, QPoint
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QHBoxLayout
 from qfluentwidgets import (FluentIcon as FIF, 
                           setTheme, Theme, isDarkTheme,
                           NavigationItemPosition, MSFluentWindow, FluentWindow,
@@ -23,20 +23,25 @@ class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
         
-        # 设置窗口属性
-        self.setWindowTitle("格式转换工具")
-        self.resize(960, 780)
+        # 设置窗口标题和图标
+        self.setWindowTitle('格式转换工具')
         self.setWindowIcon(QIcon(":/icons/logo.png"))
         
-        # 创建子界面
+        # 设置窗口大小
+        self.resize(1050, 750)  # 增加宽度和高度
+        
+        # 初始化界面
         self.taskInterface = TaskInterface(self)
         self.settingInterface = SettingInterface(self)
         
-        # 初始化导航栏
+        # 添加子界面
         self.initNavigation()
         
         # 设置主题
         self.initTheme()
+        
+        # 居中显示
+        self.moveToCenter()
         
         # 允许拖拽
         self.setAcceptDrops(True)
@@ -235,6 +240,14 @@ class MainWindow(FluentWindow):
                 duration=2000,
                 parent=self
             )
+
+    def moveToCenter(self):
+        """将窗口移动到屏幕中央"""
+        screen = QApplication.primaryScreen().geometry()
+        size = self.geometry()
+        x = (screen.width() - size.width()) // 2
+        y = (screen.height() - size.height()) // 2
+        self.move(x, y)
 
 
 if __name__ == '__main__':

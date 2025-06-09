@@ -1,6 +1,6 @@
 import os
-from PySide6.QtCore import Qt, Signal, QThread
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
+from PyQt6.QtCore import Qt, pyqtSignal as Signal, QThread
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 from qfluentwidgets import (FluentIcon as FIF,
                           ScrollArea, ProgressBar,
                           PushButton, InfoBar,
@@ -108,21 +108,19 @@ class TaskCard(QWidget):
         InfoBar.success(
             title='转换完成',
             content=f"文件已保存到: {self.target_file}",
-            orient=Qt.Horizontal,
+            orient=Qt.Orientation.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=2000,
             parent=self
         )
         
-    def onError(self, error_msg):
-        self.cancelButton.setText("失败")
-        self.cancelButton.setIcon(FIF.CANCEL)
-        self.cancelButton.setEnabled(False)
+    def onError(self, error_msg: str):
+        """错误处理"""
         InfoBar.error(
-            title='转换失败',
+            title='错误',
             content=error_msg,
-            orient=Qt.Horizontal,
+            orient=Qt.Orientation.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=2000,
@@ -136,7 +134,7 @@ class TaskCard(QWidget):
         InfoBar.warning(
             title='已取消',
             content="转换任务已取消",
-            orient=Qt.Horizontal,
+            orient=Qt.Orientation.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=2000,
@@ -148,7 +146,7 @@ class TaskInterface(ScrollArea):
     """任务列表界面"""
     
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.setObjectName("taskInterface")
         self.scrollWidget = QWidget()
         self.scrollWidget.setObjectName("scrollWidget")
@@ -160,7 +158,7 @@ class TaskInterface(ScrollArea):
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         
         # 添加标题区域
-        self.headerWidget = QWidget(self)
+        self.headerWidget = QWidget()
         self.headerLayout = QVBoxLayout(self.headerWidget)
         self.headerLayout.setContentsMargins(0, 0, 0, 0)
         self.headerLayout.setSpacing(8)
@@ -171,7 +169,8 @@ class TaskInterface(ScrollArea):
         self.titleButtonLayout.setSpacing(16)
         
         # 添加标题
-        self.titleLabel = QLabel("任务列表", self)
+        self.titleLabel = QLabel(parent=self)
+        self.titleLabel.setText("任务列表")
         self.titleLabel.setObjectName("taskTitleLabel")
         self.titleButtonLayout.addWidget(self.titleLabel)
         
@@ -191,8 +190,8 @@ class TaskInterface(ScrollArea):
         
         # 添加分隔线
         self.separator = QFrame(self)
-        self.separator.setFrameShape(QFrame.HLine)
-        self.separator.setFrameShadow(QFrame.Sunken)
+        self.separator.setFrameShape(QFrame.Shape.HLine)
+        self.separator.setFrameShadow(QFrame.Shadow.Sunken)
         self.headerLayout.addWidget(self.separator)
         
         self.vBoxLayout.addWidget(self.headerWidget)

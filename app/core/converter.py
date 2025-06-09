@@ -117,7 +117,8 @@ class FormatConverter:
             result = subprocess.run(
                 ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', source],
                 capture_output=True,
-                text=True
+                text=True,
+                encoding='utf-8'
             )
             duration = float(result.stdout)
             
@@ -126,43 +127,87 @@ class FormatConverter:
                 'ffmpeg',
                 '-i', source,  # 输入文件
                 '-y',  # 覆盖已存在的文件
-                '-progress', 'pipe:1',  # 输出进度信息
-                '-nostats',  # 不输出统计信息
+                '-c:v', 'libx264',  # 使用 H.264 编码
+                '-preset', 'medium',  # 编码速度预设
+                '-crf', '23',  # 视频质量参数
+                '-c:a', 'aac',  # 音频编码
+                '-b:a', '128k',  # 音频比特率
+                '-movflags', '+faststart',  # 优化网络播放
                 target  # 输出文件
             ]
             
-            # 启动转换进程
+            # 执行转换
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                universal_newlines=True
+                universal_newlines=True,
+                encoding='utf-8'
             )
             
-            # 读取进度
-            time_pattern = re.compile(r'out_time=(\d+):(\d+):(\d+\.\d+)')
+            # 实时获取进度
+            time_pattern = re.compile(r'time=(\d+):(\d+):(\d+\.\d+)')
             while True:
-                line = process.stdout.readline()
+                line = process.stderr.readline()
+                
                 if not line and process.poll() is not None:
+                    # 确保在转换完成时显示100%
+                    if process.returncode == 0 and progress_callback:
+                        progress_callback(100)
                     break
                     
                 if self.is_cancelled:
                     process.terminate()
+                    process.wait()  # 等待进程完全终止
+                    # 删除未完成的输出文件
+                    try:
+                        if os.path.exists(target):
+                            os.remove(target)
+                    except Exception as e:
+                        print(f"删除未完成文件失败: {str(e)}")
                     return False
                     
                 match = time_pattern.search(line)
-                if match:
+                if match and progress_callback:
                     h, m, s = map(float, match.groups())
                     current_time = h * 3600 + m * 60 + s
-                    progress = min(int(current_time / duration * 100), 100)
-                    if progress_callback:
-                        progress_callback(progress)
+                    progress = min(int(current_time / duration * 100), 99)  # 最多显示99%，留1%给完成时
+                    progress_callback(progress)
             
-            return process.returncode == 0
+            # 检查转换结果
+            if process.returncode != 0:
+                stderr_output = process.stderr.read()
+                # 如果转换失败，删除未完成的输出文件
+                try:
+                    if os.path.exists(target):
+                        os.remove(target)
+                except Exception as e:
+                    print(f"删除未完成文件失败: {str(e)}")
+                    
+                if stderr_output:
+                    raise Exception(stderr_output)
+                else:
+                    raise Exception("转换过程中发生未知错误")
+            
+            return True
             
         except Exception as e:
-            print(f"视频转换失败：{e}")
-            return False
+            # 如果发生异常，删除未完成的输出文件
+            try:
+                if os.path.exists(target):
+                    os.remove(target)
+            except Exception as remove_error:
+                print(f"删除未完成文件失败: {str(remove_error)}")
+                
+            error_msg = str(e)
+            if "No such file or directory" in error_msg:
+                raise Exception("找不到输入文件或无法创建输出文件")
+            elif "Invalid data found" in error_msg:
+                raise Exception("输入文件格式无效或已损坏")
+            elif "Error while decoding" in error_msg:
+                raise Exception("解码错误，输入文件可能已损坏")
+            else:
+                raise Exception(f"视频转换失败：{error_msg}")
             
     def _convert_video_to_audio(self, source: str, target: str, progress_callback: Callable[[int], None] = None) -> bool:
         """视频转音频"""

@@ -1,8 +1,8 @@
 import sys
 import os
 import subprocess
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QColor
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QColor
 from qfluentwidgets import MessageBox
 
 from app.view.main_window import MainWindow
