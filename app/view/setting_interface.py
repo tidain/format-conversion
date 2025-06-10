@@ -1,8 +1,10 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from qfluentwidgets import (ScrollArea, ExpandLayout, SettingCardGroup,
-                          SwitchSettingCard, ComboBoxSettingCard, PushSettingCard,
-                          InfoBar, FluentIcon as FIF, InfoBarPosition, isDarkTheme)
+from PyQt6.QtWidgets import QWidget, QVBoxLayout
+from PyQt6.QtCore import Qt, QUrl
+from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, 
+                          ComboBoxSettingCard, PushSettingCard,
+                          ScrollArea, ExpandLayout, InfoBar,
+                          FluentIcon as FIF, InfoBarPosition)
+from qfluentwidgets import isDarkTheme
 from qfluentwidgets.common.config import (ConfigItem, QConfig, 
                                         OptionsConfigItem, OptionsValidator)
 
@@ -51,87 +53,85 @@ class SettingInterface(ScrollArea):
     
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.setObjectName("settingInterface")
         self.scrollWidget = QWidget()
         self.expandLayout = ExpandLayout(self.scrollWidget)
         
-        # 设置对象名称
-        self.setObjectName('settingInterface')
-        self.scrollWidget.setObjectName('settingScrollWidget')
+        # 主题设置卡片
+        self.themeCard = ComboBoxSettingCard(
+            configItem=config_manager.theme_mode,
+            icon=FIF.BRUSH,
+            title='主题模式',
+            content='设置应用的主题模式',
+            texts=[mode.value for mode in ThemeMode],
+            parent=self.scrollWidget
+        )
+        
+        # 开机自启卡片
+        self.autostartCard = SwitchSettingCard(
+            icon=FIF.POWER_BUTTON,
+            title="开机自启",
+            content="设置是否开机自动启动",
+            configItem=config_manager.autostart,
+            parent=self.scrollWidget
+        )
         
         # 初始化界面
-        self.initUI()
+        self.initWidget()
         
-        # 更新样式
-        self.updateStyle()
-        
-    def initUI(self):
+    def initWidget(self):
         """ 初始化界面 """
-        self.setObjectName('settingInterface')
-        
-        # 创建滚动区域
-        self.scrollWidget = QWidget()
-        self.expandLayout = ExpandLayout(self.scrollWidget)
-        
-        # 设置滚动条
-        self.setWidget(self.scrollWidget)
-        self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setViewportMargins(0, 0, 0, 0)
+        self.setWidget(self.scrollWidget)
+        self.setWidgetResizable(True)
         
-        # 外观设置
-        appearanceGroup = SettingCardGroup("外观", self.scrollWidget)
+        # 主题设置组
+        self.themeGroup = SettingCardGroup(self.tr('主题设置'), self.scrollWidget)
+        self.themeGroup.addSettingCard(self.themeCard)
         
-        # 主题模式
-        self.themeModeCard = ComboBoxSettingCard(
-            cfg.themeMode,
-            FIF.BRUSH,
-            "主题模式",
-            "设置软件的主题模式",
-            ["Light", "Dark", "System"],
-            parent=appearanceGroup
-        )
+        # 基本设置组
+        self.basicGroup = SettingCardGroup(self.tr('基本设置'), self.scrollWidget)
+        self.basicGroup.addSettingCard(self.autostartCard)
         
-        # 背景特效
-        self.backgroundEffectCard = SwitchSettingCard(
-            FIF.TRANSPARENT,
-            "背景特效",
-            "启用或禁用背景模糊特效",
-            cfg.enableBackgroundEffect,
-            parent=appearanceGroup
-        )
-        
-        appearanceGroup.addSettingCard(self.themeModeCard)
-        appearanceGroup.addSettingCard(self.backgroundEffectCard)
-        
-        # 软件设置
-        softwareGroup = SettingCardGroup("软件", self.scrollWidget)
-        
-        # 开机自启
-        self.autoStartCard = SwitchSettingCard(
-            FIF.POWER_BUTTON,
-            "开机自启",
-            "设置软件是否随系统启动",
-            cfg.enableAutoStart,
-            parent=softwareGroup
-        )
-        
-        softwareGroup.addSettingCard(self.autoStartCard)
-        
-        # 添加设置组到布局
-        self.expandLayout.addWidget(appearanceGroup)
-        self.expandLayout.addWidget(softwareGroup)
+        # 添加组到布局
+        self.expandLayout.setSpacing(28)
+        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.themeGroup)
+        self.expandLayout.addWidget(self.basicGroup)
         
         # 连接信号
-        self.themeModeCard.comboBox.currentTextChanged.connect(self.onThemeModeChanged)
-        self.backgroundEffectCard.switchButton.checkedChanged.connect(self.onBackgroundEffectChanged)
-        self.autoStartCard.switchButton.checkedChanged.connect(self.onAutoStartChanged)
+        self.themeCard.comboBox.currentIndexChanged.connect(self.onThemeModeChanged)
+        self.autostartCard.switchButton.checkedChanged.connect(self.onAutostartChanged)
+        
+    def onThemeModeChanged(self, index):
+        """ 主题模式改变的处理函数 """
+        theme_modes = [ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SYSTEM]
+        set_theme_mode(theme_modes[index])
+        
+    def onAutostartChanged(self, checked):
+        """ 开机自启设置改变的处理函数 """
+        try:
+            if checked:
+                autostart_manager.enable_autostart()
+            else:
+                autostart_manager.disable_autostart()
+        except Exception as e:
+            InfoBar.error(
+                title='错误',
+                content=str(e),
+                orient=Qt.Orientation.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
         
     def updateStyle(self):
         """更新样式"""
         self.scrollWidget.setStyleSheet("""
-            QWidget#settingScrollWidget {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
-                border: none;
+            QWidget {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
             }
             
             SettingCardGroup {
@@ -142,42 +142,49 @@ class SettingInterface(ScrollArea):
             QLabel {
                 background: transparent;
                 border: none;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
             }
             
             ComboBox {
                 font-size: 14px;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
-                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
+                background: """ + ('white' if not isDarkTheme() else '#2b2b2b') + """;
+                border: 1px solid """ + ('#e5e5e5' if not isDarkTheme() else '#333333') + """;
                 border-radius: 4px;
                 padding: 5px;
             }
             
+            ComboBox:hover {
+                background: """ + ('#f5f5f5' if not isDarkTheme() else '#333333') + """;
+            }
+            
             ComboBox:disabled {
-                color: """ + ('rgba(255, 255, 255, 0.3)' if isDarkTheme() else 'rgba(0, 0, 0, 0.3)') + """;
-                background: """ + ('#1e1e1e' if isDarkTheme() else '#e0e0e0') + """;
+                color: """ + ('rgba(0, 0, 0, 0.3)' if not isDarkTheme() else 'rgba(255, 255, 255, 0.3)') + """;
+                background: """ + ('#f0f0f0' if not isDarkTheme() else '#1e1e1e') + """;
             }
             
             SwitchButton {
                 background: transparent;
                 border: none;
             }
-        """)
-        
-        self.setStyleSheet("""
+            
             QScrollArea {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
                 border: none;
             }
             
+            QScrollArea > QWidget > QWidget {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
+            }
+            
             QScrollBar {
-                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
                 border: none;
                 width: 4px;
             }
             
             QScrollBar::handle {
-                background: """ + ('#666666' if isDarkTheme() else '#c0c0c0') + """;
+                background: """ + ('#c0c0c0' if not isDarkTheme() else '#666666') + """;
                 border: none;
                 border-radius: 2px;
                 min-height: 32px;
@@ -192,41 +199,4 @@ class SettingInterface(ScrollArea):
                 background: none;
                 border: none;
             }
-        """)
-        
-    def onThemeModeChanged(self, value):
-        """ 主题模式改变时的处理函数 """
-        InfoBar.success(
-            title='设置已保存',
-            content="主题模式已更改",
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self
-        )
-        self.updateStyle()
-        
-    def onBackgroundEffectChanged(self, value):
-        """ 背景特效改变时的处理函数 """
-        InfoBar.success(
-            title='设置已保存',
-            content="背景特效设置已更改",
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self
-        )
-        
-    def onAutoStartChanged(self, value):
-        """ 开机自启改变时的处理函数 """
-        InfoBar.success(
-            title='设置已保存',
-            content="开机自启动设置已更改",
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self
-        ) 
+        """) 

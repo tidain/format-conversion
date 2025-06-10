@@ -57,67 +57,49 @@ class MainWindow(FluentWindow):
     def updateStyle(self):
         """ 更新样式 """
         self.setStyleSheet("""
-            QMainWindow {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
+            QMainWindow, QWidget, QStackedWidget, NavigationInterface, NavigationInterface QScrollArea, TitleBar {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
             }
             
-            QWidget {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
-            }
-            
-            QStackedWidget {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
-            }
-            
-            NavigationInterface {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
-            }
-            
-            NavigationInterface QScrollArea {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
-            }
-            
-            MinimizeButton {
+            MinimizeButton, MaximizeButton, CloseButton {
                 background-color: transparent;
                 border: none;
                 border-radius: 0;
-            }
-            
-            MaximizeButton {
-                background-color: transparent;
-                border: none;
-                border-radius: 0;
-            }
-            
-            CloseButton {
-                background-color: transparent;
-                border: none;
-                border-radius: 0;
-            }
-            
-            TitleBar {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
             }
             
             QLabel {
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
+                background-color: transparent;
             }
             
             QPushButton {
                 padding: 8px 16px;
                 font-size: 14px;
                 border-radius: 4px;
-                background-color: """ + ('#333333' if isDarkTheme() else '#f0f0f0') + """;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
+                background-color: """ + ('#f0f0f0' if not isDarkTheme() else '#333333') + """;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
                 border: none;
             }
             
             QPushButton:hover {
-                background-color: """ + ('#404040' if isDarkTheme() else '#e5e5e5') + """;
+                background-color: """ + ('#e5e5e5' if not isDarkTheme() else '#404040') + """;
             }
             
             QPushButton:pressed {
-                background-color: """ + ('#2b2b2b' if isDarkTheme() else '#d9d9d9') + """;
+                background-color: """ + ('#d9d9d9' if not isDarkTheme() else '#2b2b2b') + """;
+            }
+            
+            QScrollArea {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
+                border: none;
+            }
+            
+            QScrollArea > QWidget > QWidget {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
+            }
+            
+            QScrollBar {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
             }
         """)
         
@@ -194,7 +176,7 @@ class MainWindow(FluentWindow):
         if settings_interface:
             layout = settings_interface.layout()
             if not layout:
-                from PySide6.QtWidgets import QVBoxLayout
+                from PyQt6.QtWidgets import QVBoxLayout
                 layout = QVBoxLayout(settings_interface)
             layout.addWidget(self.theme_combobox)
 

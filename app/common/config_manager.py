@@ -1,62 +1,67 @@
 import json
 import os
 from enum import Enum
+from qfluentwidgets import QConfig, OptionsConfigItem, OptionsValidator
 
 class ThemeMode(Enum):
     LIGHT = "浅色主题"
     DARK = "深色主题"
     SYSTEM = "跟随系统"
 
-class ConfigManager:
-    def __init__(self):
-        self.config_dir = os.path.join(os.path.expanduser('~'), '.gsgc')
+class Config(QConfig):
+    """ 配置类 """
+    
+    def __init__(self, config_dir=None):
+        super().__init__()
+        if config_dir is None:
+            config_dir = os.path.join(os.path.expanduser('~'), '.gsgc')
+        self.config_dir = config_dir
         self.config_file = os.path.join(self.config_dir, 'config.json')
-        self.default_config = {
-            'theme_mode': ThemeMode.SYSTEM.name,
-            'autostart': False
-        }
         self._ensure_config_exists()
-        self.config = self._load_config()
-
+        
+        # 主题模式
+        theme_options = [mode.name for mode in ThemeMode]
+        self.theme_mode = OptionsConfigItem(
+            "Theme", "ThemeMode",
+            ThemeMode.SYSTEM.name,
+            OptionsValidator(theme_options)
+        )
+        
+        # 开机自启
+        self.autostart = OptionsConfigItem(
+            "Startup", "AutoStart",
+            False,
+            OptionsValidator([True, False])
+        )
+        
     def _ensure_config_exists(self):
         """确保配置文件存在"""
         if not os.path.exists(self.config_dir):
             os.makedirs(self.config_dir)
         if not os.path.exists(self.config_file):
             with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump(self.default_config, f, ensure_ascii=False, indent=4)
-
-    def _load_config(self):
-        """加载配置"""
-        try:
-            with open(self.config_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return self.default_config.copy()
-
-    def _save_config(self):
-        """保存配置"""
-        with open(self.config_file, 'w', encoding='utf-8') as f:
-            json.dump(self.config, f, ensure_ascii=False, indent=4)
+                json.dump({
+                    'theme_mode': ThemeMode.SYSTEM.name,
+                    'autostart': False
+                }, f, ensure_ascii=False, indent=4)
 
     def get_theme_mode(self):
         """获取主题模式"""
-        theme_mode = self.config.get('theme_mode', ThemeMode.SYSTEM.name)
-        return ThemeMode[theme_mode]
+        return ThemeMode[self.theme_mode.value]
 
     def set_theme_mode(self, theme_mode: ThemeMode):
         """设置主题模式"""
-        self.config['theme_mode'] = theme_mode.name
-        self._save_config()
+        self.theme_mode.value = theme_mode.name
+        self.save()
 
     def get_autostart(self):
         """获取开机自启动设置"""
-        return self.config.get('autostart', False)
+        return self.autostart.value
 
     def set_autostart(self, enabled: bool):
         """设置开机自启动"""
-        self.config['autostart'] = enabled
-        self._save_config()
+        self.autostart.value = enabled
+        self.save()
 
 # 创建全局配置管理器实例
-config_manager = ConfigManager() 
+config_manager = Config() 

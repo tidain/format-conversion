@@ -8,7 +8,8 @@ from qfluentwidgets import (FluentIcon as FIF,
                           ComboBox, PushButton,
                           InfoBar, InfoBarPosition,
                           isDarkTheme, FluentStyleSheet,
-                          RadioButton, LineEdit)
+                          RadioButton, LineEdit,
+                          SubtitleLabel)
 
 from app.core.format_mapping import get_target_formats
 from ..core.converter import FormatConverter

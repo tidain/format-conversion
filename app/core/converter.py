@@ -172,7 +172,8 @@ class FormatConverter:
                     h, m, s = map(float, match.groups())
                     current_time = h * 3600 + m * 60 + s
                     progress = min(int(current_time / duration * 100), 99)  # 最多显示99%，留1%给完成时
-                    progress_callback(progress)
+                    if progress_callback:
+                        progress_callback(progress)
             
             # 检查转换结果
             if process.returncode != 0:

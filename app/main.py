@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QApplication, QWidget
 from qfluentwidgets import FluentWindow, setTheme, Theme, FluentIcon
 
 from app.view.add_task_interface import AddTaskDialog

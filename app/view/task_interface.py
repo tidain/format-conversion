@@ -1,6 +1,7 @@
 import os
-from PyQt6.QtCore import Qt, pyqtSignal as Signal, QThread
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
+from PyQt6.QtWidgets import (QWidget, QFrame, QHBoxLayout, QVBoxLayout, 
+                          QSpacerItem, QSizePolicy, QLabel)
+from PyQt6.QtCore import Qt, pyqtSignal, QThread
 from qfluentwidgets import (FluentIcon as FIF,
                           ScrollArea, ProgressBar,
                           PushButton, InfoBar,
@@ -12,9 +13,9 @@ from .add_task_interface import AddTaskDialog
 
 
 class ConvertTask(QThread):
-    progressUpdated = Signal(int)
-    completed = Signal()
-    error = Signal(str)
+    progressUpdated = pyqtSignal(int)
+    completed = pyqtSignal()
+    error = pyqtSignal(str)
     
     def __init__(self, source_file, target_file):
         super().__init__()
@@ -207,69 +208,64 @@ class TaskInterface(ScrollArea):
         """更新样式"""
         self.scrollWidget.setStyleSheet("""
             QWidget {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
             }
-
+            
             QLabel {
-                font-size: 14px;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background: transparent;
-                border: none;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
+                background-color: transparent;
             }
-
-            QLabel#taskTitleLabel {
-                font-size: 28px;
+            
+            #taskTitleLabel {
+                font-size: 24px;
                 font-weight: bold;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background: transparent;
-                border: none;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
+                background-color: transparent;
             }
             
-            BodyLabel {
-                font-size: 14px;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background: transparent;
-                border: none;
+            QFrame[frameShape="4"] {
+                color: """ + ('#e5e5e5' if not isDarkTheme() else '#333333') + """;
             }
             
-            QFrame {
-                border: 1px solid """ + ('#333333' if isDarkTheme() else '#e0e0e0') + """;
-                background: transparent;
-            }
-
-            PushButton {
-                font-size: 14px;
-                color: """ + ('white' if isDarkTheme() else 'black') + """;
-                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
-                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
-                border-radius: 4px;
-                padding: 5px 10px;
-            }
-
-            PushButton:hover {
-                background: """ + ('#333333' if isDarkTheme() else '#e0e0e0') + """;
-            }
-
-            PushButton:pressed {
-                background: """ + ('#1e1e1e' if isDarkTheme() else '#d0d0d0') + """;
-            }
-
-            PushButton:disabled {
-                color: """ + ('rgba(255, 255, 255, 0.3)' if isDarkTheme() else 'rgba(0, 0, 0, 0.3)') + """;
-                background: """ + ('#1e1e1e' if isDarkTheme() else '#e0e0e0') + """;
-            }
-
             TaskCard {
-                background: """ + ('#2b2b2b' if isDarkTheme() else '#f5f5f5') + """;
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
+                border: 1px solid """ + ('#e5e5e5' if not isDarkTheme() else '#333333') + """;
                 border-radius: 8px;
-                border: 1px solid """ + ('rgba(255, 255, 255, 0.1)' if isDarkTheme() else 'rgba(0, 0, 0, 0.1)') + """;
             }
-        """)
-        
-        self.setStyleSheet("""
-            QScrollArea {
-                background-color: """ + ('#1e1e1e' if isDarkTheme() else 'white') + """;
+            
+            TaskCard QLabel {
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
+                background-color: transparent;
+            }
+            
+            TaskCard QPushButton {
+                padding: 8px 16px;
+                font-size: 14px;
+                border-radius: 4px;
+                background-color: """ + ('#f0f0f0' if not isDarkTheme() else '#333333') + """;
+                color: """ + ('black' if not isDarkTheme() else 'white') + """;
                 border: none;
+            }
+            
+            TaskCard QPushButton:hover {
+                background-color: """ + ('#e5e5e5' if not isDarkTheme() else '#404040') + """;
+            }
+            
+            TaskCard QPushButton:pressed {
+                background-color: """ + ('#d9d9d9' if not isDarkTheme() else '#2b2b2b') + """;
+            }
+            
+            QScrollArea {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
+                border: none;
+            }
+            
+            QScrollArea > QWidget > QWidget {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
+            }
+            
+            QScrollBar {
+                background-color: """ + ('white' if not isDarkTheme() else '#1e1e1e') + """;
             }
         """)
         

@@ -1,22 +1,23 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QProgressBar
-from PySide6.QtCore import Qt, QThread, Signal
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QProgressBar
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from qfluentwidgets import PrimaryPushButton, InfoBar, InfoBarPosition
 import sys
 import os
-import subprocess
 import requests
 import zipfile
+import shutil
+from tqdm import tqdm
 import winreg
 
 class FFmpegInstallerThread(QThread):
-    progress_updated = Signal(int, str)
-    installation_finished = Signal(bool, str)
+    progress_updated = pyqtSignal(int, str)
+    installation_finished = pyqtSignal(bool, str)
 
     def run(self):
         try:
             # 获取系统盘
             system_drive = os.environ.get('SystemDrive', 'C:')
-            ffmpeg_dir = os.path.join(system_drive, 'ffmpeg')
+            ffmpeg_dir = os.environ.get('FFmpegDir', os.path.join(system_drive, 'ffmpeg'))
             
             # 创建ffmpeg目录
             os.makedirs(ffmpeg_dir, exist_ok=True)

@@ -1,5 +1,5 @@
 import winreg
-from PySide6.QtGui import QColor
+from PyQt6.QtGui import QColor
 from qfluentwidgets import setThemeColor, Theme, setTheme
 from .config_manager import ThemeMode, config_manager
 
