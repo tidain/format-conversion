@@ -151,10 +151,10 @@ class MainWindow(FluentWindow):
     def dropEvent(self, event):
         files = [url.toLocalFile() for url in event.mimeData().urls()]
         if files:
-            # 显示新建任务对话框
             dialog = AddTaskDialog(parent=self)
             dialog.resize(self.size())
             dialog.setSourceFile(files[0])
+            dialog.taskCreated.connect(self.taskInterface.addConvertTask)
             dialog.exec()
 
     def init_theme_settings(self):

@@ -103,6 +103,7 @@ class TaskCard(QWidget):
         self.progressBar.setValue(value)
         
     def onCompleted(self):
+        self.progressBar.setValue(100)
         self.cancelButton.setText("完成")
         self.cancelButton.setIcon(FIF.COMPLETED)
         self.cancelButton.setEnabled(False)
