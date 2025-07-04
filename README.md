@@ -12,6 +12,7 @@
   - 文档格式：PDF, DOCX, DOC, TXT, RTF, ODT, PAGES
   - 演示格式：PPT, PPTX, KEY, ODP
   - 表格格式：XLS, XLSX, CSV, ODS
+- 双主题切换(支持浅色和深色主题)
 - 开机自启动选项
 - 检测安装ffmpeg（可在程序内安装）
 
