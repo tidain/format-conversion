@@ -1,8 +1,8 @@
 from typing import Union
 
-from PyQt6.QtCore import Qt, QPoint, QSize, QObject, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPainterPath, QResizeEvent
-from PyQt6.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
+from PySide6.QtCore import Qt, QPoint, QSize, QObject, Signal
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QResizeEvent
+from PySide6.QtWidgets import (QWidget, QFrame, QVBoxLayout, QHBoxLayout,
                              QDialog, QGraphicsDropShadowEffect)
 
 

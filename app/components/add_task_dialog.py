@@ -1,5 +1,5 @@
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFileDialog
 from qfluentwidgets import (FluentIcon as FIF, 
                           SubtitleLabel, LineEdit, PushButton,
                           ComboBox, InfoBar, InfoBarPosition,

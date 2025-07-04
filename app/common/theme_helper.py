@@ -1,5 +1,5 @@
 import winreg
-from PyQt6.QtGui import QColor
+from PySide6.QtGui import QColor
 from qfluentwidgets import setThemeColor, Theme, setTheme
 from .config_manager import ThemeMode, config_manager
 
@@ -51,22 +51,27 @@ def get_system_theme():
         return "light"
 
 def apply_theme():
-    """应用主题设置"""
-    # 获取用户设置的主题模式
+    """应用主题设置（只用 setTheme，不全局 setStyleSheet）"""
     theme_mode = config_manager.get_theme_mode()
-    
-    # 设置主题颜色
     accent_color = get_windows_accent_color()
     setThemeColor(accent_color)
-    
-    # 根据主题模式设置深浅主题
     if theme_mode == ThemeMode.SYSTEM:
         system_theme = get_system_theme()
         setTheme(Theme.DARK if system_theme == "dark" else Theme.LIGHT)
     elif theme_mode == ThemeMode.DARK:
         setTheme(Theme.DARK)
-    else:  # ThemeMode.LIGHT
+    else:
         setTheme(Theme.LIGHT)
+    
+    # 尝试更新主窗口样式 (如果已创建)
+    try:
+        from PySide6.QtWidgets import QApplication
+        if QApplication.instance():
+            for widget in QApplication.instance().topLevelWidgets():
+                if hasattr(widget, 'updateStyle'):
+                    widget.updateStyle()
+    except Exception:
+        pass
 
 def set_theme_mode(theme_mode: ThemeMode):
     """设置主题模式并立即应用"""

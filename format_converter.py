@@ -2,9 +2,9 @@ import sys
 import os
 import subprocess
 import logging
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QColor
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QColor
+from PySide6.QtCore import QThread, Signal, QTimer
 from qfluentwidgets import MessageBox
 
 from app.view.main_window import MainWindow
@@ -23,7 +23,7 @@ if sys.platform == "win32":
     flags = subprocess.CREATE_NO_WINDOW
 
 class FFmpegCheckThread(QThread):
-    ffmpeg_missing = pyqtSignal()
+    ffmpeg_missing = Signal()
 
     def run(self):
         try:
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         QTimer.singleShot(0, start_ffmpeg_check)
 
         # 5. 给主窗口加closeEvent，安全退出线程
-        from PyQt6.QtWidgets import QMainWindow
+        from PySide6.QtWidgets import QMainWindow
         old_closeEvent = window.closeEvent if hasattr(window, 'closeEvent') else None
         def new_closeEvent(self, event):
             if hasattr(self, 'ffmpeg_thread') and self.ffmpeg_thread.isRunning():
@@ -137,9 +137,9 @@ if __name__ == '__main__':
         logging.critical(f'程序发生致命错误: {str(e)}', exc_info=True)
         # 显示错误对话框
         if 'app' in locals():
-            from PyQt6.QtWidgets import QPushButton
+            from PySide6.QtWidgets import QPushButton
             from qfluentwidgets import InfoBar, InfoBarPosition
-            from PyQt6.QtCore import Qt
+            from PySide6.QtCore import Qt
             
             # 创建错误提示窗口
             error_msg = str(e)
