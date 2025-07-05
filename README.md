@@ -1,10 +1,10 @@
 # 文件格式转换器
 
-一个现代化的文件格式转换工具，界面基于 PySide6 和 QFluentWidgets 开发，支持多种文件格式的转换。
+一个现代化的文件格式转换工具，界面基于 PySide6 和 PySide6-Fluent-Widgets 开发，支持多种文件格式的转换。
 
 ## 功能特点
 
-- 现代化的 Fluent Design 界面设计（基于 PySide6 + QFluentWidgets）
+- 现代化的 Fluent Design 界面设计（基于 PySide6 + PySide6-Fluent-Widgets）
 - 支持多种文件格式转换：
   - 视频格式：MP4, AVI, MOV, FLV, MKV, WMV, WEBM, M4V, 3GP
   - 音频格式：MP3, WAV, AAC, FLAC, M4A, OGG, WMA
@@ -66,7 +66,7 @@
 本项目使用以下主要技术：
 
 - PySide6：Qt for Python
-- QFluentWidgets：Fluent Design 风格的 Qt 控件
+- PySide6-Fluent-Widgets：Fluent Design 风格的 Qt 控件
 - ffmpeg：音视频处理
 
 ## 许可证
