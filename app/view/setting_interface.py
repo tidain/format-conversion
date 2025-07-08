@@ -362,15 +362,15 @@ class SettingInterface(ScrollArea):
                 msg = '开机自启动关闭成功'
             if success:
                 if not getattr(self, '_autostart_syncing', False):
-                InfoBar.success(
-                    title='成功',
-                    content=msg,
-                    orient=Qt.Orientation.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
-                )
+                    InfoBar.success(
+                        title='成功',
+                        content=msg,
+                        orient=Qt.Orientation.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=2000,
+                        parent=self
+                    )
             else:
                 self.show_autostart_error('未知错误')
         except Exception as e:
@@ -464,12 +464,12 @@ class SettingInterface(ScrollArea):
                 InfoBar.info(
                     title='提示',
                     content='用户已取消安装ffmpeg',
-                orient=Qt.Orientation.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=2000,
-                parent=self
-            )
+                    orient=Qt.Orientation.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
         
     def onUninstallFFmpegClicked(self):
         """卸载FFmpeg按钮点击事件"""
