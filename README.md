@@ -21,7 +21,7 @@
 
 ## 从Microsoft Store下载安装
 
-<a href="https://apps.microsoft.com/detail/9nstl7thhqzj?referrer=appbadge&mode=direct">
+<a href="https://apps.microsoft.com/detail/9nstl7thhqzj?referrer=appbadge&launch=true&mode=full">
 	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200"/>
 </a>
 
