@@ -19,12 +19,7 @@
 - 开机自启动选项
 - 检测安装ffmpeg（可在程序内安装）
 
-## 从Microsoft Store下载安装
-<a href="https://apps.microsoft.com/detail/9nstl7thhqzj?referrer=appbadge&mode=direct">
-	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200"/>
-</a>
-
-## 源代码安装说明
+## 安装说明
 
 1. 确保已安装 Python 3.7 或更高版本
 2. 克隆或下载本项目
