@@ -21,6 +21,7 @@
 
 ## 从Microsoft Store下载安装
 
+- 点击后将自动跳转Microsoft Store进行安装， 若你的电脑没有Microsoft Store请在接下来的页面点击下载来下载exe安装程序
 <a href="https://apps.microsoft.com/detail/9nstl7thhqzj?referrer=appbadge&launch=true&mode=full">
 	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200"/>
 </a>
