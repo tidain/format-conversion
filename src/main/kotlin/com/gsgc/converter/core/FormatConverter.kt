@@ -189,18 +189,20 @@ class FormatConverter {
         target: String,
         progressCallback: ((Int) -> Unit)? = null
     ): Boolean {
-        if (isCancelled) return false
+        if (isCancelled) { deleteOutput(target); return false }
         progressCallback?.invoke(0)
         return try {
-            if (isCancelled) return false
+            if (isCancelled) { deleteOutput(target); return false }
             val img = javax.imageio.ImageIO.read(File(source))
                 ?: throw RuntimeException("无法读取图片: $source")
+            if (isCancelled) { deleteOutput(target); return false }
             val ext = File(target).extension.lowercase()
             val format = when (ext) {
                 "jpg", "jpeg" -> "jpg"
                 else -> ext
             }
             val written = javax.imageio.ImageIO.write(img, format, File(target))
+            if (isCancelled) { deleteOutput(target); return false }
             progressCallback?.invoke(100)
             if (!written) throw RuntimeException("不支持的图片格式: $ext")
             true
@@ -217,10 +219,10 @@ class FormatConverter {
         target: String,
         progressCallback: ((Int) -> Unit)? = null
     ): Boolean {
-        if (isCancelled) return false
+        if (isCancelled) { deleteOutput(target); return false }
         progressCallback?.invoke(0)
         return try {
-            if (isCancelled) return false
+            if (isCancelled) { deleteOutput(target); return false }
             val srcExt = File(source).extension.lowercase()
             val tgtExt = File(target).extension.lowercase()
 
@@ -229,18 +231,21 @@ class FormatConverter {
             if (libreOffice != null) {
                 val success = convertWithLibreOffice(libreOffice, source, target, srcExt, tgtExt, progressCallback)
                 if (success) {
+                    if (isCancelled) { deleteOutput(target); return false }
                     progressCallback?.invoke(100)
                     return true
                 }
                 // LibreOffice 失败时回退到内置实现
             }
 
+            if (isCancelled) { deleteOutput(target); return false }
             when {
                 srcExt == "pdf" && tgtExt == "docx" -> pdfToDocx(source, target)
                 srcExt == "docx" && tgtExt == "pdf" -> docxToPdf(source, target)
                 srcExt == "docx" && tgtExt == "txt" -> docxToTxt(source, target)
                 else -> throw RuntimeException("不支持的文档转换: $srcExt -> $tgtExt")
             }
+            if (isCancelled) { deleteOutput(target); return false }
             progressCallback?.invoke(100)
             true
         } catch (e: Exception) {
@@ -272,7 +277,7 @@ class FormatConverter {
         val tmpDir = File(System.getProperty("java.io.tmpdir"), "fc_lo_${System.nanoTime()}")
         tmpDir.mkdirs()
         return try {
-            if (isCancelled) return false
+            if (isCancelled) { deleteOutput(target); return false }
             progressCallback?.invoke(10)
 
             val cmd = listOf(
@@ -293,12 +298,13 @@ class FormatConverter {
             while (reader.readLine() != null) {
                 if (isCancelled) {
                     process.destroyForcibly()
+                    deleteOutput(target)
                     return false
                 }
             }
             process.waitFor()
 
-            if (isCancelled) return false
+            if (isCancelled) { deleteOutput(target); return false }
             progressCallback?.invoke(70)
 
             if (process.exitValue() != 0) {
@@ -392,19 +398,20 @@ class FormatConverter {
         target: String,
         progressCallback: ((Int) -> Unit)? = null
     ): Boolean {
-        if (isCancelled) return false
+        if (isCancelled) { deleteOutput(target); return false }
         progressCallback?.invoke(0)
         val tempDir = File(System.getProperty("java.io.tmpdir"), "fc_${System.nanoTime()}")
         tempDir.mkdirs()
         return try {
-            if (isCancelled) { tempDir.deleteRecursively(); return false }
+            if (isCancelled) { tempDir.deleteRecursively(); deleteOutput(target); return false }
             // 解压
             extractArchive(source, tempDir)
             progressCallback?.invoke(50)
-            if (isCancelled) { tempDir.deleteRecursively(); return false }
+            if (isCancelled) { tempDir.deleteRecursively(); deleteOutput(target); return false }
 
             // 压缩
             compressArchive(tempDir, target)
+            if (isCancelled) { tempDir.deleteRecursively(); deleteOutput(target); return false }
             progressCallback?.invoke(100)
             true
         } catch (e: Exception) {
