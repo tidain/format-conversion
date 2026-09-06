@@ -4,7 +4,6 @@ import com.sun.jna.Pointer
 import com.sun.jna.WString
 import com.sun.jna.platform.win32.Guid
 import com.sun.jna.platform.win32.Ole32
-import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WTypes
 import com.sun.jna.platform.win32.COM.Unknown
@@ -24,38 +23,42 @@ object WindowsFileDialog {
     private const val FOS_FILEMUSTEXIST = 0x00001000
     private const val FOS_PATHMUSTEXIST = 0x00000800
 
-    // SIGDN flags (0x80058000 溢出 Int，需 toInt)
+    // SIGDN flags
     private const val SIGDN_FILESYSPATH = 0x80058000.toInt()
 
     private val CLSCTX_ALL = WTypes.CLSCTX_INPROC_SERVER or
             WTypes.CLSCTX_INPROC_HANDLER or
             WTypes.CLSCTX_LOCAL_SERVER
 
-    /** RPC_E_CHANGED_MODE = 0x80010106，表示 COM 已以不同模式初始化 */
-    private val RPC_E_CHANGED_MODE = WinNT.HRESULT(0x80010106.toInt())
+    private const val S_OK = 0
+    private val RPC_E_CHANGED_MODE = 0x80010106.toInt()
 
     /**
      * 包装 IFileOpenDialog COM 对象，通过 vtable 索引调用方法。
      * vtable: IUnknown(0-2) -> IModalWindow.Show(3) -> IFileDialog(4-26)
+     * 所有方法用 _invokeNativeInt 直接返回 HRESULT(int)，避免 HRESULT 对象构造问题。
      */
     private class FileOpenDialog(ptr: Pointer) : Unknown(ptr) {
-        fun Show(hwnd: WinDef.HWND?): WinNT.HRESULT =
-            _invokeNativeObject(3, arrayOf<Any?>(hwnd), WinNT.HRESULT::class.java) as WinNT.HRESULT
+        /** Show(HWND) -> HRESULT. args[0] 必须是 this 指针 */
+        fun Show(): Int = _invokeNativeInt(3, arrayOf(getPointer(), Pointer.NULL))
 
-        fun SetOptions(fos: Int): WinNT.HRESULT =
-            _invokeNativeObject(9, arrayOf(fos), WinNT.HRESULT::class.java) as WinNT.HRESULT
+        /** SetOptions(FOS) -> HRESULT */
+        fun SetOptions(fos: Int): Int = _invokeNativeInt(9, arrayOf(getPointer(), fos))
 
-        fun SetTitle(pszTitle: String): WinNT.HRESULT =
-            _invokeNativeObject(17, arrayOf(WString(pszTitle)), WinNT.HRESULT::class.java) as WinNT.HRESULT
+        /** SetTitle(LPCWSTR) -> HRESULT */
+        fun SetTitle(pszTitle: String): Int =
+            _invokeNativeInt(17, arrayOf(getPointer(), WString(pszTitle)))
 
-        fun GetResult(ppsi: PointerByReference): WinNT.HRESULT =
-            _invokeNativeObject(20, arrayOf(ppsi), WinNT.HRESULT::class.java) as WinNT.HRESULT
+        /** GetResult(IShellItem**) -> HRESULT */
+        fun GetResult(ppsi: PointerByReference): Int =
+            _invokeNativeInt(20, arrayOf(getPointer(), ppsi))
     }
 
     /** IShellItem: IUnknown(0-2) -> BindToHandler(3) -> GetParent(4) -> GetDisplayName(5) */
     private class ShellItem(ptr: Pointer) : Unknown(ptr) {
-        fun GetDisplayName(sigdnName: Int, ppszName: PointerByReference): WinNT.HRESULT =
-            _invokeNativeObject(5, arrayOf(sigdnName, ppszName), WinNT.HRESULT::class.java) as WinNT.HRESULT
+        /** GetDisplayName(SIGDN, LPWSTR*) -> HRESULT */
+        fun GetDisplayName(sigdnName: Int, ppszName: PointerByReference): Int =
+            _invokeNativeInt(5, arrayOf(getPointer(), sigdnName, ppszName))
     }
 
     private fun createDialog(): FileOpenDialog? {
@@ -67,25 +70,41 @@ object WindowsFileDialog {
         return FileOpenDialog(pbr.value)
     }
 
-    /** 初始化当前线程的 COM（STA 模式），已初始化则忽略。 */
-    private fun ensureComInitialized() {
-        try {
-            val hr = Ole32.INSTANCE.CoInitializeEx(Pointer.NULL, 0x2) // COINIT_APARTMENTTHREADED
-            if (hr != WinNT.S_OK && hr != RPC_E_CHANGED_MODE) {
-                Ole32.INSTANCE.CoInitializeEx(Pointer.NULL, 0x0) // COINIT_MULTITHREADED
-            }
-        } catch (_: Throwable) {
-        }
-    }
-
     /**
      * 显示现代 Windows 打开文件对话框。
+     * IFileDialog 必须在 STA 线程中运行，因此在专用线程上执行。
      * @param title 对话框标题
      * @param pickFolders true=选择文件夹，false=选择文件
      * @return 选中的路径，取消则返回 null
      */
     fun showOpenDialog(title: String, pickFolders: Boolean): String? {
-        ensureComInitialized()
+        val result = arrayOfNulls<String>(1)
+        val latch = java.util.concurrent.CountDownLatch(1)
+
+        val thread = Thread {
+            try {
+                // 在新线程上初始化 COM 为 STA 模式
+                val hrInit = Ole32.INSTANCE.CoInitializeEx(Pointer.NULL, 0x2) // COINIT_APARTMENTTHREADED
+                if (hrInit != WinNT.S_OK && hrInit != WinNT.HRESULT(RPC_E_CHANGED_MODE)) {
+                    result[0] = null
+                    return@Thread
+                }
+                result[0] = showDialogInternal(title, pickFolders)
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                result[0] = null
+            } finally {
+                Ole32.INSTANCE.CoUninitialize()
+                latch.countDown()
+            }
+        }
+        thread.name = "FileDialog-STA"
+        thread.start()
+        latch.await()
+        return result[0]
+    }
+
+    private fun showDialogInternal(title: String, pickFolders: Boolean): String? {
         var dialog: FileOpenDialog? = null
         try {
             dialog = createDialog() ?: return null
@@ -96,19 +115,19 @@ object WindowsFileDialog {
             } else {
                 options = options or FOS_FILEMUSTEXIST
             }
-            dialog.SetOptions(options)
-            dialog.SetTitle(title)
+            if (dialog.SetOptions(options) != S_OK) return null
+            if (dialog.SetTitle(title) != S_OK) return null
 
-            val hr = dialog.Show(null)
-            if (hr != WinNT.S_OK) return null // 用户取消或出错
+            val hr = dialog.Show()
+            if (hr != S_OK) return null // S_FALSE/ERROR_CANCELLED = 用户取消
 
             val ppsi = PointerByReference()
-            if (dialog.GetResult(ppsi) != WinNT.S_OK) return null
+            if (dialog.GetResult(ppsi) != S_OK) return null
 
             val shellItem = ShellItem(ppsi.value)
             try {
                 val ppszName = PointerByReference()
-                if (shellItem.GetDisplayName(SIGDN_FILESYSPATH, ppszName) != WinNT.S_OK) return null
+                if (shellItem.GetDisplayName(SIGDN_FILESYSPATH, ppszName) != S_OK) return null
                 val pathPtr = ppszName.value ?: return null
                 val path = pathPtr.getWideString(0)
                 Ole32.INSTANCE.CoTaskMemFree(pathPtr)
@@ -116,7 +135,8 @@ object WindowsFileDialog {
             } finally {
                 shellItem.Release()
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            e.printStackTrace()
             return null
         } finally {
             dialog?.Release()

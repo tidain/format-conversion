@@ -217,10 +217,11 @@ fun AddTaskDialog(viewModel: AppViewModel) {
 private fun chooseFile(): File? {
     val isWindows = System.getProperty("os.name")?.contains("Windows", ignoreCase = true) == true
     if (isWindows) {
+        // Windows 只用现代对话框，取消则返回 null（不回退到老式对话框）
         val path = com.gsgc.converter.util.WindowsFileDialog.showOpenDialog("选择文件", pickFolders = false)
-        if (path != null) return File(path)
+        return path?.let { File(it) }
     }
-    // 回退：AWT FileDialog
+    // 非 Windows 回退：AWT FileDialog
     val dialog = FileDialog(java.awt.Frame(), "选择文件", FileDialog.LOAD)
     dialog.isVisible = true
     val dir = dialog.directory ?: return null
@@ -236,10 +237,10 @@ private fun chooseFile(): File? {
 private fun chooseDirectory(): String? {
     val isWindows = System.getProperty("os.name")?.contains("Windows", ignoreCase = true) == true
     if (isWindows) {
-        val native = com.gsgc.converter.util.WindowsFileDialog.showOpenDialog("选择保存位置", pickFolders = true)
-        if (native != null) return native
+        // Windows 只用现代对话框，取消则返回 null（不回退到老式对话框）
+        return com.gsgc.converter.util.WindowsFileDialog.showOpenDialog("选择保存位置", pickFolders = true)
     }
-    // 回退：JFileChooser
+    // 非 Windows 回退：JFileChooser
     val chooser = javax.swing.JFileChooser().apply {
         fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
     }
