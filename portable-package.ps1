@@ -16,9 +16,9 @@ $JDK = Ensure-Jdk -RequireJPackage
 Write-Host "[OK] Using JDK: $JDK" -ForegroundColor Green
 
 $AppName = "FormatConverter"
-$AppVersion = "1.0.0"
+$AppVersion = "2.0.0"
 $MainClass = "com.gsgc.converter.MainKt"
-$MainJar = "format-converter-1.0.0.jar"
+$MainJar = "format-converter-2.0.0.jar"
 
 Write-Host ""
 Write-Host "[1/5] Gradle: build jar + export runtime libs..." -ForegroundColor Cyan

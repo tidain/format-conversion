@@ -2,7 +2,10 @@
 ; 由 installer-package.ps1 调用，AppVersion 通过 /D 参数传入
 
 #define MyAppName "格式转换工具"
-#define MyAppVersion "{#AppVersion}"
+#ifndef AppVersion
+  #define AppVersion "2.0.0"
+#endif
+#define MyAppVersion AppVersion
 #define MyAppPublisher "GSGC"
 #define MyAppExeName "FormatConverter.exe"
 
@@ -25,7 +28,7 @@ PrivilegesRequired=lowest
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务:"; Flags: checkedonce

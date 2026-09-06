@@ -12,7 +12,7 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 Write-Host "Installer build working directory: $root" -ForegroundColor Cyan
 
-$AppVersion = "1.0.0"
+$AppVersion = "2.0.0"
 
 # ---- [1/3] 生成免安装版（jpackage app-image + skiko 原生库）----
 Write-Host ""

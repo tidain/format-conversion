@@ -20,6 +20,8 @@ Thumbs.db
 # Build output
 release/
 out/
+portable-libs/
+META-INF/
 
 # Local config
 local.properties

@@ -81,3 +81,9 @@ kotlin {
 tasks.test {
     useJUnitPlatform()
 }
+
+// 导出运行时依赖 jar 到 build/exportLibs，供免安装打包脚本使用
+tasks.register<Copy>("exportRuntimeLibs") {
+    from(configurations.runtimeClasspath)
+    into(layout.buildDirectory.dir("exportLibs"))
+}
