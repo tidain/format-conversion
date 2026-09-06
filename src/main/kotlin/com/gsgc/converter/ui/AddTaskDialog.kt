@@ -210,7 +210,7 @@ fun AddTaskDialog(viewModel: AppViewModel) {
 }
 
 /**
- * 弹出文件选择对话框（AWT FileDialog）
+ * 弹出文件选择对话框（AWT FileDialog，Windows 上为原生资源管理器样式）
  */
 private fun chooseFile(): File? {
     val dialog = FileDialog(java.awt.Frame(), "选择文件", FileDialog.LOAD)
@@ -221,13 +221,81 @@ private fun chooseFile(): File? {
 }
 
 /**
- * 弹出目录选择对话框
+ * 弹出目录选择对话框。
+ * Windows 上使用原生 SHBrowseForFolder（资源管理器样式文件夹浏览器），
+ * 其他平台回退到 JFileChooser。
  */
 private fun chooseDirectory(): String? {
+    val isWindows = System.getProperty("os.name")?.contains("Windows", ignoreCase = true) == true
+    if (isWindows) {
+        val native = chooseDirectoryWindowsNative()
+        if (native != null) return native
+    }
+    // 回退：JFileChooser
     val chooser = javax.swing.JFileChooser().apply {
         fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
     }
     return if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
         chooser.selectedFile.absolutePath
     } else null
+}
+
+/**
+ * 使用 Windows API SHBrowseForFolder 弹出原生文件夹选择对话框
+ */
+private fun chooseDirectoryWindowsNative(): String? {
+    return try {
+        val ole32 = com.sun.jna.platform.win32.Ole32.INSTANCE
+        ole32.CoInitializeEx(com.sun.jna.Pointer.NULL, com.sun.jna.platform.win32.Ole32.COINIT_APARTMENTTHREADED)
+        try {
+            val bi = BrowseInfo()
+            bi.lpszTitle = "选择保存位置"
+            // BIF_RETURNONLYFSDIRS(0x1) | BIF_NEWDIALOGSTYLE(0x40) | BIF_EDITBOX(0x10)
+            bi.ulFlags = 0x0001 or 0x0040 or 0x0010
+            val pidl = Shell32Ex.INSTANCE.SHBrowseForFolder(bi)
+            if (pidl != null) {
+                val pathBuf = CharArray(260)
+                val ok = Shell32Ex.INSTANCE.SHGetPathFromIDList(pidl, pathBuf)
+                ole32.CoTaskMemFree(pidl)
+                if (ok) {
+                    val path = String(pathBuf).trimEnd('\u0000')
+                    if (path.isNotEmpty()) path else null
+                } else null
+            } else null
+        } finally {
+            ole32.CoUninitialize()
+        }
+    } catch (e: Throwable) {
+        null
+    }
+}
+
+/**
+ * JNA 结构：Windows BROWSEINFO
+ */
+@com.sun.jna.Structure.FieldOrder(
+    "hwndOwner", "pidlRoot", "pszDisplayName", "lpszTitle",
+    "ulFlags", "lpfn", "lParam", "iImage"
+)
+private class BrowseInfo : com.sun.jna.Structure() {
+    @JvmField var hwndOwner: com.sun.jna.platform.win32.WinDef.HWND? = null
+    @JvmField var pidlRoot: com.sun.jna.Pointer? = null
+    @JvmField var pszDisplayName: CharArray = CharArray(260)
+    @JvmField var lpszTitle: String? = null
+    @JvmField var ulFlags: Int = 0
+    @JvmField var lpfn: com.sun.jna.Pointer? = null
+    @JvmField var lParam: com.sun.jna.Pointer? = null
+    @JvmField var iImage: Int = 0
+}
+
+/**
+ * 自定义 Shell32 接口，补充 jna-platform 未提供的 SHBrowseForFolder / SHGetPathFromIDList
+ */
+private interface Shell32Ex : com.sun.jna.win32.StdCallLibrary {
+    fun SHBrowseForFolder(lpbi: BrowseInfo): com.sun.jna.Pointer?
+    fun SHGetPathFromIDList(pidl: com.sun.jna.Pointer?, pszPath: CharArray): Boolean
+
+    companion object {
+        val INSTANCE = com.sun.jna.Native.load("shell32", Shell32Ex::class.java) as Shell32Ex
+    }
 }
