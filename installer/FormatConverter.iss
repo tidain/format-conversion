@@ -6,7 +6,7 @@
   #define AppVersion "2.0.0"
 #endif
 #define MyAppVersion AppVersion
-#define MyAppPublisher "GSGC"
+#define MyAppPublisher "tidain"
 #define MyAppExeName "FormatConverter.exe"
 
 [Setup]

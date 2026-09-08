@@ -75,7 +75,7 @@ $jpackageExe = Join-Path $JDK "bin\jpackage.exe"
   --dest release `
   --name $AppName `
   --app-version $AppVersion `
-  --vendor "GSGC" `
+  --vendor "tidain" `
   --description "格式转换工具 - 音视频/图片/文档/压缩包格式转换" `
   --input portable-libs `
   --main-jar $MainJar `

@@ -115,6 +115,13 @@ com.gsgc.converter
 - 字体来源：[Adobe Source Han Sans](https://github.com/adobe-fonts/source-han-sans)
 - 字体协议：[SIL Open Font License 1.1](https://scripts.sil.org/OFL)
 
+### FFmpeg声明
+
+本软件内置的 **FFmpeg（LGPL, shared）** 来源于 [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)，遵循 **LGPLv3** 协议。
+
+- 获取替代版本与构建说明：[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases)
+- FFmpeg 原始协议说明：[ffmpeg.org/license.html](https://ffmpeg.org/license.html)
+
 ### 第三方依赖
 
 - [Kotlin](https://kotlinlang.org/) — Apache 2.0
@@ -129,3 +136,4 @@ com.gsgc.converter
 2. 建议在转换重要文件前进行备份
 3. 某些格式转换可能会损失部分格式信息
 4. 本软件使用了多个开源第三方库，这些库的使用遵循其各自的开源协议
+5. FFmpeg 是 Fabrice Bellard 的注册商标，本软件未获 FFmpeg 项目背书。
