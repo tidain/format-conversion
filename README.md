@@ -129,8 +129,3 @@ com.gsgc.converter
 2. 建议在转换重要文件前进行备份
 3. 某些格式转换可能会损失部分格式信息
 4. 本软件使用了多个开源第三方库，这些库的使用遵循其各自的开源协议
-
-## 联系方式
-
-- 开发者邮箱：2713615817@qq.com
-- GitHub 仓库：https://github.com/tidain/format-conversion
